@@ -1,50 +1,70 @@
-# Suzuki–Kasami Algorithm Simulator (Java Swing)
+# Suzuki-Kasami Algorithm Simulator
 
-Interactive simulator of the Suzuki–Kasami token-based algorithm for distributed mutual exclusion.
-Subject: Distributed Computing.
+Desktop app that shows how the Suzuki-Kasami token algorithm gives distributed processes mutual exclusion, step by step.
 
-## Run (needs JDK 17 or newer, check with `java -version`)
+- **Status:** finished
+- **Built:** September 2026
+- **Keywords:** Java, Swing, Distributed Computing, Mutual Exclusion, Suzuki-Kasami, Simulation
 
-| System  | Command |
-|---------|---------|
-| Windows | double-click `run.bat`   (or double-click `SuzukiKasami.jar`) |
-| Linux / macOS | `sh run.sh`   (or `java -jar SuzukiKasami.jar`) |
+## Highlights
 
-`run.bat` / `run.sh` compile the source in `src/` and start the app. The jar is the same program, already compiled.
+- Built a simulator for 2 to 10 processes. Play, pause, step and step back, with speed from 0.25x to 4x.
+- Click a process to make it request or release the critical section, and watch the REQUEST and TOKEN messages travel.
+- Added live panels: RN array of every process, the token (LN and queue), event log, timeline, message counts, waiting times and a safety monitor.
+- Added Setup (process count, first token holder, seed, delay range, FIFO or non-FIFO channels), 5 ready scenarios, and save and open of your own `.skm` scenario files.
+- Wrote a self test: 400 random simulations, about 1.2 million events, checked after every event. It passed with 0 failures.
 
-## Self test (proves the algorithm is correct)
+## Screenshots
 
+![Start of a run, P0 holds the token](docs/screenshots/01-start.png)
+
+Start: 5 processes, all idle, P0 holds the token.
+
+![Run with waiting processes and one in the critical section](docs/screenshots/02-running.png)
+
+Running: P1 holds the token and is in the critical section, the others wait.
+
+![Long run with the timeline](docs/screenshots/03-long-run.png)
+
+After 76 seconds of virtual time: the timeline shows who waited and when, and the monitor still says SAFE.
+
+## Tech
+
+- Java 17 or newer, no external libraries.
+- Swing with custom painting: the network, the timeline and the panels are drawn by hand.
+- One virtual clock drives everything. A message's position is computed from the clock every frame, so the animation cannot drift from the algorithm.
+- The algorithm lives only in `Simulation.java`. The window only draws it.
+
+## Run it
+
+- Needs: JDK 17 or newer (check with `java -version`)
+- Tested on: JDK 21 on Linux (self test passes)
+
+Windows: double-click `run.bat`, or double-click `SuzukiKasami.jar`.
+
+Linux or macOS:
+
+```bash
+sh run.sh
 ```
+
+Self test:
+
+```bash
 javac -d out $(find src -name "*.java")
 java -cp out skm.test.EngineSelfTest
 ```
-It runs 400 random simulations (2 to 10 processes, FIFO and non-FIFO networks, heavy random workloads,
-about 1.2 million events) and checks after every event that there is exactly one token and at most one process
-in the critical section, that "step back" restores the exact previous state, and that every request is served.
 
-## What you can do in the app
+Keys: Space = play or pause, Right = step, Left = step back. More detail is in [docs/GUIDE.md](docs/GUIDE.md).
 
-* **Play / Pause / Step / Step back** with a speed slider (0.25x to 4x). Step glides smoothly to the next event.
-* **Click a process** (or use the Process box) to request or release the critical section.
-* **Setup...** change number of processes (2 to 10), starting token holder, random seed, network delay range,
-  FIFO or non-FIFO channels, time spent in the CS, and random workload.
-* **Scenarios** ready-made demos, plus save / open your own `.skm` scenario files (repeatable demos).
-* **Live panels** RN array of every process, token (LN and queue Q), event log, timeline of all processes,
-  message counters, waiting times, and a safety monitor.
+## Limits and next
 
-Keyboard: `Space` play/pause, `Right` step, `Left` step back.
+- Not done: it is a simulation on one computer with a virtual clock, not real processes on a network.
+- Not done: no crashed processes or lost messages. The algorithm assumes none.
+- Not done: only the Suzuki-Kasami algorithm. Ricart-Agrawala appears only as a message-count comparison.
 
-## Project structure
+## Author
 
-```
-src/skm/model    Site (process), Token, Message, Action, enums          - plain data
-src/skm/engine   Simulation (THE ALGORITHM + event loop), Config, Metrics, Rng
-src/skm/ui       MainFrame, NetworkPanel, TimelinePanel, InfoPanel, SetupDialog, Theme, Btn
-src/skm/io       ScenarioIO (built-in scenarios, save / load)
-src/skm/test     EngineSelfTest
-```
-The algorithm lives only in `Simulation.java` (`doRequest`, `doRelease`, `deliver`). The GUI only draws it.
+Sachin Kumar | [GitHub](https://github.com/sachinkrcodes) | [LinkedIn](https://www.linkedin.com/in/sachinkrcodes) | Portfolio: [sachinkrcodes.vercel.app](https://sachinkrcodes.vercel.app) | sachinkrcodes@gmail.com
 
-## Why it does not lag
-All animation uses one virtual clock. A message's position is computed from the clock every frame, so nothing
-is animated separately from the algorithm. A paused simulation does not redraw at all.
+MIT License. See [LICENSE](LICENSE).
