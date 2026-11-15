@@ -1,70 +1,79 @@
-# Suzuki-Kasami Algorithm Simulator
+# Suzuki-Kasami Simulator
 
-Desktop app that shows how the Suzuki-Kasami token algorithm gives distributed processes mutual exclusion, step by step.
+Simulator that shows how Suzuki-Kasami and Ricart-Agrawala keep processes out of the critical section together, and what breaks them.
 
 - **Status:** finished
-- **Built:** September 2026
-- **Keywords:** Java, Swing, Distributed Computing, Mutual Exclusion, Suzuki-Kasami, Simulation
+- **Built:** September 2026 (Java), November 2026 (web version, faults, comparison)
+- **Keywords:** Java, Swing, JavaScript, Distributed Computing, Mutual Exclusion, Suzuki-Kasami, Ricart-Agrawala, Simulation
 
 ## Highlights
 
-- Built a simulator for 2 to 10 processes. Play, pause, step and step back, with speed from 0.25x to 4x.
-- Click a process to make it request or release the critical section, and watch the REQUEST and TOKEN messages travel.
-- Added live panels: RN array of every process, the token (LN and queue), event log, timeline, message counts, waiting times and a safety monitor.
-- Added Setup (process count, first token holder, seed, delay range, FIFO or non-FIFO channels), 5 ready scenarios, and save and open of your own `.skm` scenario files.
-- Added a headless benchmark that compares Suzuki-Kasami with Ricart-Agrawala (30 seeds per row, N = 2 to 10).
-- Measured at N = 10: Ricart-Agrawala uses 18 messages per entry, Suzuki-Kasami 9.78 (light load) and 9.95 (heavy load).
-- Under light load Suzuki-Kasami also waits less (6.11 s vs 6.82 s at N = 10).
-- Wrote a self test: 400 random simulations, about 1.2 million events, checked after every event. It passed with 0 failures.
+- Built two versions: a Java Swing desktop app (Suzuki-Kasami) and a plain JavaScript web version that runs in any browser, phone included.
+- Web version runs both algorithms for 2 to 10 processes: play, pause, step, step back, with token, RN, queue, timeline and a safety monitor.
+- Added fault injection: lose any message (by click, at random, or the next one) and crash or restart a process. The page shows a lost token or a blocked process.
+- Added a Compare page: both algorithms, same settings, 30 seeds for each N from 2 to 10. At N = 10 under light load Ricart-Agrawala sends 18 messages per entry and Suzuki-Kasami 9.78.
+- Wrote self tests for Java (400 random runs, about 1.2 million events) and JavaScript (240 runs, 168,000 events).
 
 ## Screenshots
 
-![Start of a run, P0 holds the token](docs/screenshots/01-start.png)
+![Suzuki-Kasami with six processes, the token travelling](docs/screenshots/01-simulate.png)
 
-Start: 5 processes, all idle, P0 holds the token.
+Simulate: 6 processes, 4 waiting (dashed), the token (diamond) on its way from P1 to P2.
 
-![Run with waiting processes and one in the critical section](docs/screenshots/02-running.png)
+![Token lost after its holder crashed](docs/screenshots/02-token-lost.png)
 
-Running: P1 holds the token and is in the critical section, the others wait.
+Fault: P0 held the token and crashed. P1 asks for the critical section and waits forever.
 
-![Long run with the timeline](docs/screenshots/03-long-run.png)
+![Ricart-Agrawala blocked by a crashed process](docs/screenshots/03-ricart-blocked.png)
 
-After 76 seconds of virtual time: the timeline shows who waited and when, and the monitor still says SAFE.
+Fault: in Ricart-Agrawala one crashed process (P3) is enough to block P1, because it needs a reply from everyone.
+
+![Compare page with two line charts](docs/screenshots/04-compare.png)
+
+Compare: messages per entry and average wait for N = 2 to 10 under light load.
+
+![Java desktop version](docs/screenshots/05-desktop-java.png)
+
+The Java desktop version.
 
 ## Tech
 
-- Java 17 or newer, no external libraries.
-- Swing with custom painting: the network, the timeline and the panels are drawn by hand.
-- One virtual clock drives everything. A message's position is computed from the clock every frame, so the animation cannot drift from the algorithm.
-- The algorithm lives only in `Simulation.java`. The window only draws it.
+- Java 17 or newer, Swing with custom painting, no external libraries.
+- Plain HTML, CSS and JavaScript for the web version. Charts and the network are drawn on `<canvas>`.
+- One virtual clock drives everything, so the animation cannot drift from the algorithm.
+- The algorithms live in `src/skm/engine/Simulation.java` (Java) and `web/engine.js` (web). The windows only draw them.
+- Node.js is needed only to run the web tests.
 
 ## Run it
 
-- Needs: JDK 17 or newer (check with `java -version`)
-- Tested on: JDK 21 on Linux (self test passes)
+- Needs: JDK 17 or newer for the desktop app. A browser for the web version.
+- Tested on: JDK 21 on Linux and Windows; Node.js 22; Chromium.
 
-Windows: double-click `run.bat`, or double-click `SuzukiKasami.jar`.
+Web version: open `web/index.html` in a browser.
 
-Linux or macOS:
+Desktop version, Windows: double-click `run.bat`. Linux or macOS:
 
 ```bash
 sh run.sh
 ```
 
-Self test:
+Tests (each one checks safety after every event):
 
 ```bash
+node web/test.js
 javac -d out $(find src -name "*.java")
 java -cp out skm.test.EngineSelfTest
+java -cp out skm.tools.Benchmark
 ```
 
-Keys: Space = play or pause, Right = step, Left = step back. More detail is in [docs/GUIDE.md](docs/GUIDE.md).
+Putting the web version online is in [docs/DEPLOY.md](docs/DEPLOY.md). More detail on the desktop app is in [docs/GUIDE.md](docs/GUIDE.md).
 
 ## Limits and next
 
 - Not done: it is a simulation on one computer with a virtual clock, not real processes on a network.
-- Not done: no crashed processes or lost messages. The algorithm assumes none.
-- Not done: only the Suzuki-Kasami algorithm. Ricart-Agrawala appears only as a message-count comparison.
+- Not done: no recovery. There are no timeouts and no token regeneration, so the simulator shows the failure and stops there.
+- Not done: the Java desktop app runs only Suzuki-Kasami. Ricart-Agrawala is in the web version and in the Java benchmark.
+- Not done: at most 10 processes.
 
 ## Author
 

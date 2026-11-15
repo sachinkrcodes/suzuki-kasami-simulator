@@ -1,5 +1,6 @@
 out/
 *.class
+benchmark.csv
 sources.txt
 .idea/
 .vscode/

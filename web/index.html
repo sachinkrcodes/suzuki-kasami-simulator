@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F7FAFC">
+<title>Suzuki-Kasami Simulator</title>
+<meta name="description" content="Watch the Suzuki-Kasami token algorithm and Ricart-Agrawala run step by step, break them on purpose, and compare their message cost.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<filter id="goo" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur in="SourceGraphic" stdDeviation="7" result="b"/>
+<feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -9"/></filter></defs></svg>
+<div class="sea" aria-hidden="true"></div>
+<div class="shell">
+  <header class="glass topbar">
+    <div class="brand"><span class="dot"></span><div>Mutual Exclusion Lab<small>Suzuki-Kasami and Ricart-Agrawala</small></div></div>
+    <div class="top-right">
+      <select id="algo" aria-label="Algorithm" style="width:auto;min-height:40px;border-radius:999px;padding:6px 12px">
+        <option value="sk">Suzuki-Kasami (token)</option>
+        <option value="ra">Ricart-Agrawala (replies)</option>
+      </select>
+      <button class="icon-btn" id="themeBtn" type="button" aria-label="Switch theme"></button>
+    </div>
+  </header>
+
+  <main>
+  <!-- ================= SIMULATE ================= -->
+  <section id="tab-sim" class="tab on">
+    <div class="sim-grid">
+      <div class="stack" style="display:grid;gap:18px">
+        <div class="glass panel stage">
+          <canvas id="stage" height="460"></canvas>
+          <div class="hint">Click a process to select it. Click a moving message to lose it.</div>
+        </div>
+        <div class="glass panel">
+          <h2>Controls</h2>
+          <div class="ctrl">
+            <button class="btn" id="play">Play</button>
+            <button class="btn soft" id="back">Step back</button>
+            <button class="btn soft" id="step">Step</button>
+            <button class="btn soft" id="reset">Reset</button>
+            <select id="speed" aria-label="Speed"><option value="0.25">0.25x</option><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="2">2x</option><option value="4">4x</option></select>
+          </div>
+          <h3 style="margin-top:18px;font-size:1rem">Selected process: <span id="selName">none</span></h3>
+          <div class="ctrl">
+            <button class="btn soft small" id="reqBtn">Request CS</button>
+            <button class="btn soft small" id="relBtn">Leave CS</button>
+            <button class="btn danger small" id="crashBtn">Crash</button>
+            <button class="btn soft small" id="restartBtn">Restart</button>
+          </div>
+          <h3 style="margin-top:18px;font-size:1rem">Faults</h3>
+          <div class="ctrl">
+            <button class="btn danger small" id="loseNext">Lose the next message</button>
+            <label class="check" style="margin:0 0 0 6px">Random loss <input type="range" id="loss" min="0" max="40" value="0" style="width:120px"><b id="lossV">0%</b></label>
+          </div>
+          <p class="small" style="margin-top:8px">Try it: crash the process that holds the token (Suzuki-Kasami), or crash any process and then request the CS (Ricart-Agrawala).</p>
+        </div>
+        <div class="glass panel">
+          <h2>Setup</h2>
+          <div class="ctrl" id="presets">
+            <button class="btn soft small" data-p="quiet">Quiet (3 processes)</button>
+            <button class="btn soft small" data-p="busy">Busy (6, auto requests)</button>
+            <button class="btn soft small" data-p="lossy">Lossy network (10%)</button>
+          </div>
+          <div class="set-grid">
+            <div class="field"><label for="cn">Processes (2-10)</label><input id="cn" type="number" min="2" max="10" value="5"></div>
+            <div class="field"><label for="cseed">Seed</label><input id="cseed" type="number" value="42"></div>
+            <div class="field"><label for="cmin">Min delay (s)</label><input id="cmin" type="number" step="0.1" value="0.8"></div>
+            <div class="field"><label for="cmax">Max delay (s)</label><input id="cmax" type="number" step="0.1" value="1.6"></div>
+            <div class="field"><label for="chold">Time in CS (s)</label><input id="chold" type="number" step="0.5" value="2"></div>
+            <div class="field"><label for="cmean">Auto request every (s)</label><input id="cmean" type="number" step="0.5" value="3"></div>
+          </div>
+          <div class="ctrl">
+            <label class="check"><input type="checkbox" id="cauto"> Processes ask by themselves</label>
+            <label class="check"><input type="checkbox" id="cfifo" checked> FIFO channels</label>
+            <label class="check"><input type="checkbox" id="crel" checked> Leave CS automatically</label>
+          </div>
+          <div class="ctrl"><button class="btn small" id="apply">Apply and restart</button></div>
+        </div>
+      </div>
+
+      <div style="display:grid;gap:18px">
+        <div class="glass panel">
+          <div class="banner" id="banner"></div>
+          <div id="metrics"></div>
+        </div>
+        <div class="glass panel"><h2>Processes</h2><div class="wrap"><table id="ptable"></table></div><div id="tokenBox"></div></div>
+        <div class="glass panel"><h2>Timeline</h2><p class="small">Dashed = waiting, solid = in the critical section, empty = idle.</p><canvas class="tl" id="tl" height="200"></canvas></div>
+        <div class="glass panel"><h2>Event log</h2><div class="log" id="log"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= COMPARE ================= -->
+  <section id="tab-cmp" class="tab">
+    <div class="glass panel">
+      <h2>Which one sends fewer messages?</h2>
+      <p class="sub">Runs both algorithms with the same settings and 30 random seeds for each number of processes. Every request is served before counting, so the numbers are fair.</p>
+      <div class="ctrl">
+        <button class="btn" id="runLight">Run: light load</button>
+        <button class="btn soft" id="runHeavy">Run: heavy load</button>
+        <span class="small" id="cmpNote">Light: each process asks about every 30 s. Heavy: about every 1 s.</span>
+      </div>
+    </div>
+    <div class="two" id="cmpOut" style="display:none">
+      <div class="glass panel"><h2>Messages per entry</h2><canvas class="chart" id="chMsg" height="260"></canvas><div class="legend"><span>&#9644; Suzuki-Kasami</span><span>&#9548; Ricart-Agrawala</span></div></div>
+      <div class="glass panel"><h2>Average wait (seconds)</h2><canvas class="chart" id="chWait" height="260"></canvas><div class="legend"><span>&#9644; Suzuki-Kasami</span><span>&#9548; Ricart-Agrawala</span></div></div>
+    </div>
+    <div class="glass panel" id="cmpTable" style="display:none"><div class="wrap"><table id="ctable"></table></div></div>
+  </section>
+
+  <!-- ================= LEARN ================= -->
+  <section id="tab-learn" class="tab">
+    <div class="two">
+      <div class="glass panel">
+        <h2>Suzuki-Kasami (token)</h2>
+        <p class="sub">One token exists. Whoever holds it may enter the critical section (CS).</p>
+        <ol class="steps">
+          <li>A process without the token raises its request number and sends REQUEST to everyone.</li>
+          <li>Each process remembers the highest request number it saw from every other process (RN).</li>
+          <li>The token records the last served request of each process (LN) and a queue of waiting processes.</li>
+          <li>On leaving the CS, the holder adds every process with RN = LN + 1 to the queue and sends the token to the first one.</li>
+        </ol>
+        <p class="small" style="margin-top:10px">Cost: N messages per entry (N-1 REQUEST + 1 TOKEN), or 0 if the process already holds the token.</p>
+      </div>
+      <div class="glass panel">
+        <h2>Ricart-Agrawala (replies)</h2>
+        <p class="sub">No token. A process needs permission from everybody else.</p>
+        <ol class="steps">
+          <li>The process stamps its request with a logical clock and sends REQUEST to everyone.</li>
+          <li>A receiver replies at once, unless it is in the CS or its own waiting request has the smaller (time, id).</li>
+          <li>In those two cases it keeps the reply back until it leaves the CS.</li>
+          <li>With N-1 replies the process enters the CS.</li>
+        </ol>
+        <p class="small" style="margin-top:10px">Cost: 2(N-1) messages per entry, always.</p>
+      </div>
+    </div>
+    <div class="glass panel">
+      <h2>What breaks it (try these in Simulate)</h2>
+      <div class="wrap"><table>
+        <tr><th>Fault</th><th>Suzuki-Kasami</th><th>Ricart-Agrawala</th></tr>
+        <tr><td>A process without the token crashes</td><td>Others keep working.</td><td>Anyone who asks later waits forever (needs a reply from every process).</td></tr>
+        <tr><td>The token holder crashes</td><td>The token is gone. Nobody can enter again.</td><td>Not relevant, there is no token.</td></tr>
+        <tr><td>A message is lost</td><td>A lost TOKEN stops everything. A lost REQUEST can leave one process waiting.</td><td>A lost REQUEST or REPLY leaves that process waiting forever.</td></tr>
+      </table></div>
+      <p class="small" style="margin-top:10px">Neither version here has recovery (timeouts, token regeneration). The simulator shows the problem, it does not solve it.</p>
+    </div>
+  </section>
+  </main>
+</div>
+
+<nav class="glass dock" aria-label="Main">
+  <div class="dock-liquid" aria-hidden="true"><i class="trail"></i><i class="lead"></i></div>
+  <a href="#sim" data-tab="sim" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="17" r="2.5"/><circle cx="19" cy="17" r="2.5"/><path d="M12 7.5L6 15M12 7.5l6 7.5M7.5 17h9"/></svg><span>Simulate</span></a>
+  <a href="#cmp" data-tab="cmp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V10M12 20V4M19 20v-7"/></svg><span>Compare</span></a>
+  <a href="#learn" data-tab="learn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3z"/><path d="M5 17a3 3 0 013-3h11"/></svg><span>Learn</span></a>
+</nav>
+<script src="design.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
