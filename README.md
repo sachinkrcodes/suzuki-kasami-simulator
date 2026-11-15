@@ -3,6 +3,7 @@
 Simulator that shows how Suzuki-Kasami and Ricart-Agrawala keep processes out of the critical section together, and what breaks them.
 
 - **Status:** finished
+- **Live:** [suzuki-kasami-simulator.vercel.app](https://suzuki-kasami-simulator.vercel.app)
 - **Built:** September 2026 (Java), November 2026 (web version, faults, comparison)
 - **Keywords:** Java, Swing, JavaScript, Distributed Computing, Mutual Exclusion, Suzuki-Kasami, Ricart-Agrawala, Simulation
 
@@ -31,10 +32,6 @@ Fault: in Ricart-Agrawala one crashed process (P3) is enough to block P1, becaus
 ![Compare page with two line charts](docs/screenshots/04-compare.png)
 
 Compare: messages per entry and average wait for N = 2 to 10 under light load.
-
-![Java desktop version](docs/screenshots/05-desktop-java.png)
-
-The Java desktop version.
 
 ## Tech
 
