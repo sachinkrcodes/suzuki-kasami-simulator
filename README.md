@@ -69,9 +69,7 @@ Putting the web version online is in [docs/DEPLOY.md](docs/DEPLOY.md). More deta
 
 - Not done: it is a simulation on one computer with a virtual clock, not real processes on a network.
 - Not done: no recovery. There are no timeouts and no token regeneration, so the simulator shows the failure and stops there.
-- Not done: the Java desktop app runs only Suzuki-Kasami. Ricart-Agrawala is in the web version and in the Java benchmark.
-- Not done: at most 10 processes.
-
+- Not done: the Java desktop app runs only Suzuki-Kasami. Ricart-Agrawala is in the web version and in the Java benchmark.                             
 ## Author
 
 Sachin Kumar | [GitHub](https://github.com/sachinkrcodes) | [LinkedIn](https://www.linkedin.com/in/sachinkrcodes) | Portfolio: [sachinkrcodes.vercel.app](https://sachinkrcodes.vercel.app) | sachinkrcodes@gmail.com
