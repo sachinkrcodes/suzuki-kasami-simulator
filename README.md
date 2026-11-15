@@ -63,8 +63,6 @@ Keys: Space = play or pause, Right = step, Left = step back. More detail is in [
 ## Limits and next
 
 - Not done: it is a simulation on one computer with a virtual clock, not real processes on a network.
-- Not done: no crashed processes or lost messages. The algorithm assumes none.
-- Not done: only the Suzuki-Kasami algorithm. Ricart-Agrawala appears only as a message-count comparison.
 
 ## Author
 
